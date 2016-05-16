@@ -9,6 +9,11 @@
     php_fpm_pool_conf_path: "{{ __php_fpm_pool_conf_path }}"
   when: php_fpm_pool_conf_path is not defined
 
+- name: Define php_fpm_webserver_conf_path.
+  set_fact:
+    php_fpm_webserver_conf_path: "{{ __php_fpm_webserver_conf_path }}"
+  when: php_fpm_webserver_conf_path is not defined
+
 - name: Stat php_fpm_pool_conf_path
   stat:
     path: "{{ php_fpm_pool_conf_path | dirname }}"
@@ -57,6 +62,18 @@
       line: "pm.max_spare_servers = {{ php_fpm_pm_max_spare_servers }}"
   when: php_enable_php_fpm
   notify: restart php-fpm
+
+- name: Configure php-fpm handler for webserver
+  lineinfile:
+    dest: "{{ php_fpm_webserver_conf_path }}"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+  with_items:
+    - regexp: "^SetHandler\s+application/x-httpd-php$"
+      line: 'SetHandler "proxy:fcgi://{{ php_fpm_listen }}"'
+  when: php_enable_php_fpm
+  notify: restart webserver
 
 - name: Ensure php-fpm is started and enabled at boot (if configured).
   service:
