@@ -64,14 +64,10 @@
   notify: restart php-fpm
 
 - name: Configure php-fpm handler for webserver
-  lineinfile:
+  replace:
     dest: "{{ php_fpm_webserver_conf_path }}"
-    regexp: "{{ item.regexp }}"
-    line: "{{ item.line }}"
-    state: present
-  with_items:
-    - regexp: "^\\s+SetHandler\\s+application/x-httpd-php$"
-      line: 'SetHandler "proxy:fcgi://{{ php_fpm_listen }}"'
+    regexp: '^(\s+SetHandler )application/x-httpd-php$'
+    replace: '\1"proxy:fcgi://{{ php_fpm_listen }}"'
   when: php_enable_php_fpm
   notify: restart webserver
 
